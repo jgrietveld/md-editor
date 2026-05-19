@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visual Markdown Editor</title>
+    <link rel="preconnect" href="https://uicdn.toast.com">
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="title-block">
+          <h1>Visual Markdown Editor</h1>
+          <span id="autosaveStatus" class="autosave-status" aria-live="polite">Draft ready</span>
+        </div>
+
+        <nav class="actions" aria-label="Document actions">
+          <button type="button" id="newButton">New</button>
+          <button type="button" id="pasteButton">Paste Markdown</button>
+          <button type="button" id="uploadButton">Upload Markdown</button>
+          <button type="button" id="copyButton">Copy Markdown</button>
+          <button type="button" id="downloadButton" class="primary-action">Download .md</button>
+          <input id="fileInput" class="visually-hidden" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" aria-hidden="true" tabindex="-1">
+        </nav>
+      </header>
+
+      <main class="workspace">
+        <section class="editor-panel" aria-label="Markdown editor">
+          <div class="tabs" role="tablist" aria-label="Editor views">
+            <button id="visualTab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="visualPanel" data-tab="visual">Visual</button>
+            <button id="markdownTab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="markdownPanel" data-tab="markdown">Markdown</button>
+            <button id="previewTab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="previewPanel" data-tab="preview">Preview</button>
+          </div>
+
+          <div id="libraryError" class="library-error" role="alert" hidden>
+            The editor library could not load. Check your connection or use a webserver that can access CDN assets.
+          </div>
+
+          <div id="visualPanel" class="tab-panel is-active" role="tabpanel" aria-labelledby="visualTab">
+            <div id="visualEditor" class="visual-editor"></div>
+          </div>
+
+          <div id="markdownPanel" class="tab-panel" role="tabpanel" aria-labelledby="markdownTab" hidden>
+            <label class="visually-hidden" for="markdownSource">Markdown source</label>
+            <textarea id="markdownSource" spellcheck="false" placeholder="Write Markdown here..."></textarea>
+          </div>
+
+          <div id="previewPanel" class="tab-panel preview-panel" role="tabpanel" aria-labelledby="previewTab" hidden>
+            <div id="preview" class="markdown-body"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="pasteModal" class="modal-backdrop" role="presentation" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="pasteModalTitle">
+        <header class="modal-header">
+          <h2 id="pasteModalTitle">Paste Markdown</h2>
+          <button id="closePasteModal" class="icon-button" type="button" aria-label="Close paste dialog">×</button>
+        </header>
+        <label for="pasteInput">Markdown to import</label>
+        <textarea id="pasteInput" placeholder="# Paste a document here"></textarea>
+        <footer class="modal-actions">
+          <button id="cancelPaste" type="button">Cancel</button>
+          <button id="importPaste" type="button" class="primary-action">Import</button>
+        </footer>
+      </section>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
