@@ -105,6 +105,7 @@
     elements.markdownSource.addEventListener("input", () => {
       setMarkdown(elements.markdownSource.value, { source: "markdown" });
     });
+    elements.markdownSource.addEventListener("paste", handleMarkdownPaste);
 
     elements.newButton.addEventListener("click", createNewDocument);
     elements.pasteButton.addEventListener("click", openPasteModal);
@@ -230,6 +231,83 @@
     if (!options.silent) {
       autosave();
     }
+  }
+
+  function handleMarkdownPaste(event) {
+    const pastedText = event.clipboardData && event.clipboardData.getData("text/plain");
+    const tableMarkdown = convertSpreadsheetTextToMarkdown(pastedText);
+
+    if (!tableMarkdown) {
+      return;
+    }
+
+    event.preventDefault();
+    insertMarkdownIntoSource(tableMarkdown);
+    showToast("Spreadsheet range converted to a Markdown table.");
+  }
+
+  function convertSpreadsheetTextToMarkdown(text) {
+    if (!text || !text.includes("\t")) {
+      return "";
+    }
+
+    const rows = text
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .split("\n")
+      .map((row) => row.split("\t"))
+      .filter((row) => row.some((cell) => cell.trim() !== ""));
+
+    const columnCount = Math.max(...rows.map((row) => row.length));
+    if (rows.length < 2 || columnCount < 2) {
+      return "";
+    }
+
+    const normalizedRows = rows.map((row) => {
+      const cells = row.slice(0, columnCount);
+      while (cells.length < columnCount) {
+        cells.push("");
+      }
+      return cells.map(formatTableCell);
+    });
+
+    const header = normalizedRows[0];
+    const separator = Array.from({ length: columnCount }, () => "---");
+    const body = normalizedRows.slice(1);
+
+    return [header, separator, ...body]
+      .map((row) => `| ${row.join(" | ")} |`)
+      .join("\n");
+  }
+
+  function formatTableCell(cell) {
+    return cell
+      .trim()
+      .replace(/\|/g, "\\|")
+      .replace(/\n/g, "<br>");
+  }
+
+  function insertMarkdownIntoSource(markdownToInsert) {
+    const source = elements.markdownSource;
+    const start = source.selectionStart;
+    const end = source.selectionEnd;
+    const before = source.value.slice(0, start);
+    const after = source.value.slice(end);
+    const insertion = padMarkdownInsertion(before, markdownToInsert, after);
+    const nextValue = `${before}${insertion}${after}`;
+    const nextCursor = before.length + insertion.length;
+
+    source.value = nextValue;
+    source.selectionStart = nextCursor;
+    source.selectionEnd = nextCursor;
+    setMarkdown(nextValue, { source: "markdown" });
+    autosave();
+  }
+
+  function padMarkdownInsertion(before, insertion, after) {
+    const prefix = before && !before.endsWith("\n\n") ? (before.endsWith("\n") ? "\n" : "\n\n") : "";
+    const suffix = after && !after.startsWith("\n\n") ? (after.startsWith("\n") ? "\n" : "\n\n") : "";
+    return `${prefix}${insertion.trim()}\n${suffix}`;
   }
 
   function renderPreview() {
