@@ -43,6 +43,10 @@
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
     restoreDraft();
     bindEvents();
 
