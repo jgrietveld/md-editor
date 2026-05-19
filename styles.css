@@ -36,7 +36,9 @@ input {
   font: inherit;
 }
 
-button {
+.actions button,
+.tabs button,
+.modal button {
   min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -47,11 +49,15 @@ button {
   padding: 0 13px;
 }
 
-button:hover {
+.actions button:hover,
+.tabs button:hover,
+.modal button:hover {
   border-color: #9aa8ba;
 }
 
-button:focus-visible,
+.actions button:focus-visible,
+.tabs button:focus-visible,
+.modal button:focus-visible,
 textarea:focus-visible {
   outline: 3px solid rgba(22, 106, 99, 0.24);
   outline-offset: 2px;
@@ -149,17 +155,32 @@ h1 {
 }
 
 .tab-panel {
-  min-height: calc(100vh - 174px);
+  height: calc(100vh - 174px);
+  min-height: 460px;
 }
 
 .visual-editor {
-  min-height: calc(100vh - 174px);
+  height: 100%;
+  min-height: 460px;
+}
+
+.visual-editor .toastui-editor-defaultUI {
+  height: 100%;
+}
+
+.visual-editor .toastui-editor-main {
+  height: calc(100% - 45px);
+}
+
+.visual-editor .toastui-editor-ww-container {
+  height: 100%;
 }
 
 #markdownSource {
   display: block;
   width: 100%;
-  min-height: calc(100vh - 174px);
+  height: 100%;
+  min-height: 460px;
   resize: none;
   border: 0;
   padding: 24px;
@@ -174,9 +195,9 @@ h1 {
 }
 
 .markdown-body {
-  max-width: 920px;
+  width: 100%;
   min-height: calc(100vh - 174px);
-  margin: 0 auto;
+  margin: 0;
   padding: 32px 36px 56px;
   line-height: 1.65;
 }
@@ -313,6 +334,10 @@ h1 {
   padding: 12px 14px;
 }
 
+.file-input {
+  display: none;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -343,7 +368,8 @@ h1 {
   .visual-editor,
   #markdownSource,
   .markdown-body {
-    min-height: calc(100vh - 232px);
+    height: calc(100vh - 232px);
+    min-height: 420px;
   }
 }
 
