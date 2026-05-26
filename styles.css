@@ -16,6 +16,8 @@
   --danger: #be123c;
   --shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
   --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --fontStack-sansSerif: "Mona Sans VF", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --fontStack-monospace: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -45,14 +47,14 @@ input {
 .actions button,
 .tabs button,
 .modal button {
-  min-height: 38px;
+  min-height: 36px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--control);
   color: var(--ink);
   cursor: pointer;
-  font-weight: 650;
-  padding: 0 12px;
+  font-weight: 600;
+  padding: 0 11px;
   transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
@@ -95,6 +97,7 @@ textarea:focus-visible {
   align-items: center;
   gap: 12px;
   min-width: 280px;
+  max-width: min(520px, 44vw);
 }
 
 .app-mark {
@@ -116,11 +119,33 @@ textarea:focus-visible {
   stroke-width: 2.1;
 }
 
-h1 {
-  margin: 0;
+.document-title {
+  display: block;
+  width: min(420px, 40vw);
+  min-width: 220px;
+  margin: -3px 0 0 -7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
   font-size: 1.05rem;
+  font-weight: 650;
   line-height: 1.2;
   letter-spacing: 0;
+  padding: 3px 6px;
+  text-overflow: ellipsis;
+}
+
+.document-title:hover {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.document-title:focus {
+  border-color: #b7c2d1;
+  background: #ffffff;
+  outline: 3px solid rgba(22, 106, 99, 0.18);
+  outline-offset: 1px;
 }
 
 .autosave-status {
@@ -146,24 +171,29 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 7px;
-  padding: 4px;
+  gap: 5px;
+  padding: 3px;
   border: 1px solid rgba(215, 221, 231, 0.72);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(248, 250, 252, 0.86);
 }
 
 .actions button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   border-color: transparent;
+  min-height: 34px;
+  border-radius: 7px;
+  font-size: 0.86rem;
+  font-weight: 560;
+  padding: 0 10px;
 }
 
 .actions svg,
 .tab svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   stroke-width: 2;
   flex: 0 0 auto;
 }
@@ -171,9 +201,9 @@ h1 {
 .actions button.primary-action,
 .modal button.primary-action {
   border-color: var(--brand);
-  background: linear-gradient(180deg, #1a756d, var(--brand-strong));
+  background: linear-gradient(180deg, #197169, var(--brand-strong));
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(15, 81, 77, 0.18);
+  box-shadow: 0 6px 14px rgba(15, 81, 77, 0.14);
 }
 
 .actions button.primary-action:hover,
@@ -243,6 +273,91 @@ h1 {
   height: 100%;
 }
 
+.visual-editor .toastui-editor-contents,
+.visual-editor .ProseMirror {
+  font-family: var(--fontStack-sansSerif);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.visual-editor .toastui-editor-contents p,
+.visual-editor .toastui-editor-contents blockquote,
+.visual-editor .toastui-editor-contents ul,
+.visual-editor .toastui-editor-contents ol,
+.visual-editor .toastui-editor-contents dl,
+.visual-editor .toastui-editor-contents table,
+.visual-editor .toastui-editor-contents pre,
+.visual-editor .toastui-editor-contents details {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.visual-editor .toastui-editor-contents h1,
+.visual-editor .toastui-editor-contents h2,
+.visual-editor .toastui-editor-contents h3,
+.visual-editor .toastui-editor-contents h4,
+.visual-editor .toastui-editor-contents h5,
+.visual-editor .toastui-editor-contents h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.visual-editor .toastui-editor-contents h1 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--soft-line);
+  font-size: 2em;
+}
+
+.visual-editor .toastui-editor-contents h2 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--soft-line);
+  font-size: 1.5em;
+}
+
+.visual-editor .toastui-editor-contents h3 {
+  border-bottom: 0;
+  font-size: 1.25em;
+}
+
+.visual-editor .toastui-editor-contents h4 {
+  border-bottom: 0;
+  font-size: 1em;
+}
+
+.visual-editor .toastui-editor-contents h5 {
+  border-bottom: 0;
+  font-size: 0.875em;
+}
+
+.visual-editor .toastui-editor-contents h6 {
+  border-bottom: 0;
+  font-size: 0.85em;
+}
+
+.visual-editor .toastui-editor-contents code,
+.visual-editor .toastui-editor-contents tt,
+.visual-editor .toastui-editor-contents pre {
+  font-family: var(--fontStack-monospace);
+}
+
+.visual-editor .toastui-editor-contents code,
+.visual-editor .toastui-editor-contents tt {
+  font-size: 85%;
+}
+
+.visual-editor .toastui-editor-contents pre {
+  font-size: 85%;
+  line-height: 1.45;
+}
+
+.visual-editor .toastui-editor-contents pre code,
+.visual-editor .toastui-editor-contents pre tt {
+  font-size: 100%;
+  line-height: inherit;
+}
+
 #markdownSource {
   display: block;
   width: 100%;
@@ -280,6 +395,59 @@ h1 {
   border-radius: 6px;
   background: #f3f5f8;
   padding: 14px 16px;
+}
+
+.markdown-code-block {
+  position: relative;
+}
+
+.markdown-code-block pre {
+  padding-right: 50px;
+}
+
+.code-copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  opacity: 0.72;
+  z-index: 1;
+  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.markdown-code-block:hover .code-copy-button,
+.code-copy-button:focus-visible {
+  opacity: 1;
+}
+
+.code-copy-button:hover {
+  border-color: #b7c2d1;
+  background: var(--control-hover);
+  color: var(--ink);
+}
+
+.code-copy-button:focus-visible {
+  outline: 3px solid rgba(22, 106, 99, 0.24);
+  outline-offset: 2px;
+}
+
+.code-copy-button.is-copied {
+  color: var(--brand);
+  opacity: 1;
+}
+
+.code-copy-button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
 }
 
 .markdown-body code {
@@ -429,6 +597,12 @@ h1 {
 
   .title-block {
     align-items: flex-start;
+    max-width: none;
+  }
+
+  .document-title {
+    width: min(100%, 420px);
+    min-width: 0;
   }
 
   .actions {

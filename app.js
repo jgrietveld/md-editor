@@ -4,6 +4,30 @@
   const STORAGE_KEY = "visual-markdown-editor-draft";
   const AUTOSAVE_DELAY = 500;
   const EMPTY_DOCUMENT = "";
+  const UNTITLED_FILENAME = "Untitled markdown file";
+  const PLACEHOLDER_MARKDOWN = `# Private Markdown editor
+
+This is a simple Markdown editor for creating, reading, editing, and validating Markdown.
+
+## Fully private by design
+
+- Your document is stored locally in this browser.
+- Nothing is sent to our servers.
+- There is no tracking whatsoever.
+- Your usage and Markdown content stay fully private.
+
+## What you can do here
+
+- Write Markdown visually or as source.
+- Preview rendered Markdown before you use it elsewhere.
+- Upload existing Markdown files.
+- Copy or download your finished Markdown.
+
+\`\`\`markdown
+# Example
+
+Write Markdown here, then preview or download it.
+\`\`\``;
 
   let markdown = EMPTY_DOCUMENT;
   let lastFilename = "";
@@ -13,9 +37,11 @@
   let autosaveTimer = null;
   let toastTimer = null;
   let isSyncingEditor = false;
+  let isShowingPlaceholder = false;
 
   const elements = {
     autosaveStatus: document.getElementById("autosaveStatus"),
+    documentTitle: document.getElementById("documentTitle"),
     newButton: document.getElementById("newButton"),
     pasteButton: document.getElementById("pasteButton"),
     uploadButton: document.getElementById("uploadButton"),
@@ -48,6 +74,7 @@
     }
 
     restoreDraft();
+    isShowingPlaceholder = isEmptyMarkdown(markdown);
     bindEvents();
 
     if (!window.toastui || !window.toastui.Editor) {
@@ -69,7 +96,7 @@
       height: "100%",
       initialEditType: "wysiwyg",
       previewStyle: "vertical",
-      initialValue: markdown,
+      initialValue: getDisplayMarkdown(),
       usageStatistics: false,
       hideModeSwitch: true,
       toolbarItems: [
@@ -91,7 +118,7 @@
     viewer = window.toastui.Editor.factory({
       el: elements.preview,
       viewer: true,
-      initialValue: markdown,
+      initialValue: getDisplayMarkdown(),
       usageStatistics: false
     });
   }
@@ -106,6 +133,14 @@
       setMarkdown(elements.markdownSource.value, { source: "markdown" });
     });
     elements.markdownSource.addEventListener("paste", handleMarkdownPaste);
+    elements.visualEditor.addEventListener("pointerdown", clearPlaceholderDocument);
+    elements.visualEditor.addEventListener("keydown", clearPlaceholderDocument);
+    elements.markdownSource.addEventListener("pointerdown", clearPlaceholderDocument);
+    elements.markdownSource.addEventListener("keydown", clearPlaceholderDocument);
+    elements.preview.addEventListener("pointerdown", clearPlaceholderDocument);
+    elements.documentTitle.addEventListener("focus", handleDocumentTitleFocus);
+    elements.documentTitle.addEventListener("blur", commitDocumentTitle);
+    elements.documentTitle.addEventListener("keydown", handleDocumentTitleKeydown);
 
     elements.newButton.addEventListener("click", createNewDocument);
     elements.pasteButton.addEventListener("click", openPasteModal);
@@ -176,6 +211,10 @@
   }
 
   function syncFromActiveView() {
+    if (isShowingPlaceholder) {
+      return;
+    }
+
     if (activeTab === "visual" && editor) {
       setMarkdown(editor.getMarkdown(), { source: "visual", silent: true });
     }
@@ -191,13 +230,15 @@
   }
 
   function syncView(viewName) {
-    if (viewName === "markdown" && elements.markdownSource.value !== markdown) {
-      elements.markdownSource.value = markdown;
+    const displayMarkdown = getDisplayMarkdown();
+
+    if (viewName === "markdown" && elements.markdownSource.value !== displayMarkdown) {
+      elements.markdownSource.value = displayMarkdown;
     }
 
-    if (viewName === "visual" && editor && editor.getMarkdown() !== markdown) {
+    if (viewName === "visual" && editor && editor.getMarkdown() !== displayMarkdown) {
       isSyncingEditor = true;
-      editor.setMarkdown(markdown, false);
+      editor.setMarkdown(displayMarkdown, false);
       editor.changeMode("wysiwyg", true);
       isSyncingEditor = false;
     }
@@ -213,6 +254,7 @@
     }
 
     markdown = nextMarkdown;
+    isShowingPlaceholder = false;
 
     if (options.source !== "markdown") {
       elements.markdownSource.value = markdown;
@@ -312,11 +354,68 @@
 
   function renderPreview() {
     if (viewer && typeof viewer.setMarkdown === "function") {
-      viewer.setMarkdown(markdown);
+      viewer.setMarkdown(getDisplayMarkdown());
+      window.requestAnimationFrame(decoratePreviewCodeBlocks);
       return;
     }
 
-    elements.preview.textContent = markdown || "Nothing to preview yet.";
+    elements.preview.textContent = getDisplayMarkdown() || "Nothing to preview yet.";
+  }
+
+  function decoratePreviewCodeBlocks() {
+    elements.preview.querySelectorAll("pre").forEach((pre) => {
+      if (pre.closest(".markdown-code-block")) {
+        return;
+      }
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "markdown-code-block";
+
+      const button = document.createElement("button");
+      button.className = "code-copy-button";
+      button.type = "button";
+      button.setAttribute("aria-label", "Copy code");
+      button.title = "Copy code";
+      button.innerHTML = '<i data-lucide="copy" aria-hidden="true"></i>';
+      button.addEventListener("click", () => copyCodeBlock(pre, button));
+
+      pre.parentNode.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+      wrapper.appendChild(button);
+    });
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  async function copyCodeBlock(pre, button) {
+    const code = pre.querySelector("code");
+    const codeText = code ? code.textContent : pre.textContent;
+
+    try {
+      await navigator.clipboard.writeText(codeText);
+      button.classList.add("is-copied");
+      button.setAttribute("aria-label", "Code copied");
+      button.title = "Code copied";
+      button.innerHTML = '<i data-lucide="check" aria-hidden="true"></i>';
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+      showToast("Code copied to clipboard.");
+
+      window.setTimeout(() => {
+        button.classList.remove("is-copied");
+        button.setAttribute("aria-label", "Copy code");
+        button.title = "Copy code";
+        button.innerHTML = '<i data-lucide="copy" aria-hidden="true"></i>';
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      }, 1400);
+    } catch (error) {
+      showToast("Copy failed. Select the code block and copy it manually.");
+    }
   }
 
   function createNewDocument() {
@@ -327,7 +426,10 @@
     }
 
     lastFilename = "";
+    syncDocumentTitle();
+    isShowingPlaceholder = true;
     setMarkdown(EMPTY_DOCUMENT, { source: "new" });
+    isShowingPlaceholder = true;
     syncAllViews();
     autosave();
     showToast("New blank document ready.");
@@ -346,7 +448,9 @@
 
   function importPastedMarkdown() {
     lastFilename = "";
+    syncDocumentTitle();
     setMarkdown(elements.pasteInput.value, { source: "paste" });
+    isShowingPlaceholder = isEmptyMarkdown(markdown);
     syncAllViews();
     closePasteModal();
     showToast("Markdown imported.");
@@ -368,7 +472,9 @@
     const reader = new FileReader();
     reader.onload = () => {
       lastFilename = file.name;
+      syncDocumentTitle();
       setMarkdown(String(reader.result || ""), { source: "upload" });
+      isShowingPlaceholder = isEmptyMarkdown(markdown);
       syncAllViews();
       autosave();
       showToast(`Uploaded ${file.name}.`);
@@ -409,8 +515,12 @@
   }
 
   function chooseDownloadFilename() {
-    if (lastFilename && /\.(md|markdown|txt)$/i.test(lastFilename)) {
-      return normalizeMarkdownFilename(lastFilename);
+    const titleFilename = filenameFromDocumentTitle();
+    if (titleFilename) {
+      lastFilename = titleFilename;
+      syncDocumentTitle();
+      autosave();
+      return titleFilename;
     }
 
     const heading = markdown.match(/^#\s+(.+)$/m);
@@ -431,7 +541,73 @@
   }
 
   function normalizeMarkdownFilename(filename) {
-    return filename.replace(/\.(markdown|txt)$/i, ".md");
+    const cleanFilename = filename.trim().replace(/[\\/:*?"<>|]/g, "-");
+    if (!cleanFilename) {
+      return "";
+    }
+
+    if (/\.(md|markdown|txt)$/i.test(cleanFilename)) {
+      return cleanFilename.replace(/\.(markdown|txt)$/i, ".md");
+    }
+
+    return `${cleanFilename}.md`;
+  }
+
+  function handleDocumentTitleFocus() {
+    if (!lastFilename) {
+      elements.documentTitle.select();
+    }
+  }
+
+  function handleDocumentTitleKeydown(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      elements.documentTitle.blur();
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      syncDocumentTitle();
+      elements.documentTitle.blur();
+    }
+  }
+
+  function commitDocumentTitle() {
+    const nextFilename = filenameFromDocumentTitle();
+    lastFilename = nextFilename;
+    syncDocumentTitle();
+    autosave();
+  }
+
+  function filenameFromDocumentTitle() {
+    const title = elements.documentTitle.value.trim();
+
+    if (!title || title === UNTITLED_FILENAME) {
+      return "";
+    }
+
+    return normalizeMarkdownFilename(title);
+  }
+
+  function syncDocumentTitle() {
+    elements.documentTitle.value = lastFilename || UNTITLED_FILENAME;
+  }
+
+  function getDisplayMarkdown() {
+    return isShowingPlaceholder ? PLACEHOLDER_MARKDOWN : markdown;
+  }
+
+  function isEmptyMarkdown(value) {
+    return !value.trim();
+  }
+
+  function clearPlaceholderDocument() {
+    if (!isShowingPlaceholder) {
+      return;
+    }
+
+    isShowingPlaceholder = false;
+    syncAllViews();
   }
 
   function autosave(immediate = false) {
@@ -468,6 +644,7 @@
       const draft = JSON.parse(rawDraft);
       markdown = typeof draft.markdown === "string" ? draft.markdown : EMPTY_DOCUMENT;
       lastFilename = typeof draft.lastFilename === "string" ? draft.lastFilename : "";
+      syncDocumentTitle();
 
       if (draft.updatedAt) {
         elements.autosaveStatus.textContent = `Restored ${formatTime(draft.updatedAt)}`;
