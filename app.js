@@ -31,7 +31,7 @@ Write Markdown here, then preview or download it.
 
   let markdown = EMPTY_DOCUMENT;
   let lastFilename = "";
-  let activeTab = "visual";
+  let activeTab = "markdown";
   let editor = null;
   let viewer = null;
   let autosaveTimer = null;
@@ -623,7 +623,7 @@ Write Markdown here, then preview or download it.
           updatedAt: timestamp
         })
       );
-      elements.autosaveStatus.textContent = `Autosaved ${formatTime(timestamp)}`;
+      elements.autosaveStatus.textContent = `Autosaved locally at ${formatTime(timestamp)}`;
     };
 
     if (immediate) {
@@ -647,7 +647,7 @@ Write Markdown here, then preview or download it.
       syncDocumentTitle();
 
       if (draft.updatedAt) {
-        elements.autosaveStatus.textContent = `Restored ${formatTime(draft.updatedAt)}`;
+        elements.autosaveStatus.textContent = `Restored local draft from ${formatTime(draft.updatedAt)}`;
       }
     } catch (error) {
       elements.autosaveStatus.textContent = "Draft could not be restored";

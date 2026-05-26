@@ -227,28 +227,54 @@ textarea:focus-visible {
 
 .tabs {
   display: flex;
-  gap: 6px;
-  padding: 9px;
+  gap: 18px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, #fbfcfe, #f5f8fb);
+  background: #ffffff;
 }
 
-.tab {
+.tabs .tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  min-width: 118px;
-  border-color: transparent;
-  border-radius: 8px;
+  gap: 8px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.tab.is-active {
-  background: #ffffff;
+.tabs .tab:hover {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   color: var(--ink);
-  border-color: var(--line);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.tabs .tab.is-active {
+  color: var(--ink);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.tabs .tab.is-active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  border-radius: 0;
+  background: var(--brand);
 }
 
 .tab-panel {
