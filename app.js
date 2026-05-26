@@ -50,8 +50,7 @@ Write Markdown here, then preview or download it.
     fileInput: document.getElementById("fileInput"),
     tabs: Array.from(document.querySelectorAll("[data-tab]")),
     panels: {
-      visual: document.getElementById("visualPanel"),
-      markdown: document.getElementById("markdownPanel"),
+      editor: document.getElementById("editorPanel"),
       preview: document.getElementById("previewPanel")
     },
     visualEditor: document.getElementById("visualEditor"),
@@ -80,6 +79,7 @@ Write Markdown here, then preview or download it.
     if (!window.toastui || !window.toastui.Editor) {
       elements.libraryError.hidden = false;
       elements.visualEditor.hidden = true;
+      elements.markdownSource.hidden = false;
       syncAllViews();
       showToast("Editor library failed to load. Markdown and preview are still available.");
       return;
@@ -94,8 +94,8 @@ Write Markdown here, then preview or download it.
     editor = new window.toastui.Editor({
       el: elements.visualEditor,
       height: "100%",
-      initialEditType: "wysiwyg",
-      previewStyle: "vertical",
+      initialEditType: "markdown",
+      previewStyle: "tab",
       initialValue: getDisplayMarkdown(),
       usageStatistics: false,
       hideModeSwitch: true,
@@ -109,10 +109,10 @@ Write Markdown here, then preview or download it.
     });
 
     editor.on("change", () => {
-      if (isSyncingEditor || activeTab !== "visual") {
+      if (isSyncingEditor || activeTab === "preview") {
         return;
       }
-      setMarkdown(editor.getMarkdown(), { source: "visual" });
+      setMarkdown(editor.getMarkdown(), { source: activeTab });
     });
 
     viewer = window.toastui.Editor.factory({
@@ -132,6 +132,7 @@ Write Markdown here, then preview or download it.
     elements.markdownSource.addEventListener("input", () => {
       setMarkdown(elements.markdownSource.value, { source: "markdown" });
     });
+    elements.visualEditor.addEventListener("paste", handleMarkdownPaste);
     elements.markdownSource.addEventListener("paste", handleMarkdownPaste);
     elements.visualEditor.addEventListener("pointerdown", clearPlaceholderDocument);
     elements.visualEditor.addEventListener("keydown", clearPlaceholderDocument);
@@ -178,11 +179,12 @@ Write Markdown here, then preview or download it.
       tab.tabIndex = isActive ? 0 : -1;
     });
 
-    Object.entries(elements.panels).forEach(([name, panel]) => {
-      const isActive = name === nextTab;
-      panel.hidden = !isActive;
-      panel.classList.toggle("is-active", isActive);
-    });
+    const isPreview = nextTab === "preview";
+    elements.panels.editor.hidden = isPreview;
+    elements.panels.editor.classList.toggle("is-active", !isPreview);
+    elements.panels.editor.setAttribute("aria-labelledby", nextTab === "visual" ? "visualTab" : "markdownTab");
+    elements.panels.preview.hidden = !isPreview;
+    elements.panels.preview.classList.toggle("is-active", isPreview);
 
     syncView(nextTab);
   }
@@ -215,31 +217,32 @@ Write Markdown here, then preview or download it.
       return;
     }
 
-    if (activeTab === "visual" && editor) {
-      setMarkdown(editor.getMarkdown(), { source: "visual", silent: true });
-    }
-    if (activeTab === "markdown") {
-      setMarkdown(elements.markdownSource.value, { source: "markdown", silent: true });
+    if ((activeTab === "visual" || activeTab === "markdown") && editor) {
+      setMarkdown(editor.getMarkdown(), { source: activeTab, silent: true });
     }
   }
 
   function syncAllViews() {
-    syncView("markdown");
-    syncView("visual");
-    syncView("preview");
+    syncView(activeTab);
+    if (activeTab !== "preview") {
+      renderPreview();
+    }
   }
 
   function syncView(viewName) {
     const displayMarkdown = getDisplayMarkdown();
 
-    if (viewName === "markdown" && elements.markdownSource.value !== displayMarkdown) {
+    if (elements.markdownSource.value !== displayMarkdown) {
       elements.markdownSource.value = displayMarkdown;
     }
 
-    if (viewName === "visual" && editor && editor.getMarkdown() !== displayMarkdown) {
+    if ((viewName === "markdown" || viewName === "visual") && editor) {
       isSyncingEditor = true;
-      editor.setMarkdown(displayMarkdown, false);
-      editor.changeMode("wysiwyg", true);
+      if (editor.getMarkdown() !== displayMarkdown) {
+        editor.setMarkdown(displayMarkdown, false);
+      }
+      editor.changeMode(viewName === "visual" ? "wysiwyg" : "markdown", true);
+      normalizeEditorMarkdown();
       isSyncingEditor = false;
     }
 
@@ -249,18 +252,22 @@ Write Markdown here, then preview or download it.
   }
 
   function setMarkdown(nextMarkdown, options = {}) {
-    if (markdown === nextMarkdown) {
+    const normalizedMarkdown = normalizeMarkdownForGithub(nextMarkdown);
+    const markdownChanged = markdown !== normalizedMarkdown;
+    const needsEditorNormalization = nextMarkdown !== normalizedMarkdown;
+
+    if (!markdownChanged && !needsEditorNormalization) {
       return;
     }
 
-    markdown = nextMarkdown;
+    markdown = normalizedMarkdown;
     isShowingPlaceholder = false;
 
-    if (options.source !== "markdown") {
+    if (options.source !== "markdown" || elements.markdownSource.value !== markdown) {
       elements.markdownSource.value = markdown;
     }
 
-    if (options.source !== "visual" && editor) {
+    if ((needsEditorNormalization || !["visual", "markdown"].includes(options.source)) && editor) {
       isSyncingEditor = true;
       editor.setMarkdown(markdown, false);
       isSyncingEditor = false;
@@ -270,7 +277,7 @@ Write Markdown here, then preview or download it.
       renderPreview();
     }
 
-    if (!options.silent) {
+    if (markdownChanged && !options.silent) {
       autosave();
     }
   }
@@ -330,19 +337,14 @@ Write Markdown here, then preview or download it.
   }
 
   function insertMarkdownIntoSource(markdownToInsert) {
-    const source = elements.markdownSource;
-    const start = source.selectionStart;
-    const end = source.selectionEnd;
-    const before = source.value.slice(0, start);
-    const after = source.value.slice(end);
-    const insertion = padMarkdownInsertion(before, markdownToInsert, after);
-    const nextValue = `${before}${insertion}${after}`;
-    const nextCursor = before.length + insertion.length;
+    if (editor && typeof editor.insertText === "function") {
+      editor.insertText(markdownToInsert.trim());
+      setMarkdown(editor.getMarkdown(), { source: activeTab });
+      return;
+    }
 
-    source.value = nextValue;
-    source.selectionStart = nextCursor;
-    source.selectionEnd = nextCursor;
-    setMarkdown(nextValue, { source: "markdown" });
+    const insertion = padMarkdownInsertion(markdown, markdownToInsert, "");
+    setMarkdown(`${markdown}${insertion}`, { source: "markdown" });
     autosave();
   }
 
@@ -350,6 +352,23 @@ Write Markdown here, then preview or download it.
     const prefix = before && !before.endsWith("\n\n") ? (before.endsWith("\n") ? "\n" : "\n\n") : "";
     const suffix = after && !after.startsWith("\n\n") ? (after.startsWith("\n") ? "\n" : "\n\n") : "";
     return `${prefix}${insertion.trim()}\n${suffix}`;
+  }
+
+  function normalizeMarkdownForGithub(value) {
+    return value.replace(/^(\s*)\* (\[[ xX]\] .*)$/gm, "$1- $2");
+  }
+
+  function normalizeEditorMarkdown() {
+    const editorMarkdown = editor.getMarkdown();
+    const normalizedMarkdown = normalizeMarkdownForGithub(editorMarkdown);
+
+    if (editorMarkdown === normalizedMarkdown) {
+      return;
+    }
+
+    markdown = normalizedMarkdown;
+    elements.markdownSource.value = normalizedMarkdown;
+    editor.setMarkdown(normalizedMarkdown, false);
   }
 
   function renderPreview() {

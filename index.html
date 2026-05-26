@@ -35,8 +35,8 @@
       <main class="workspace">
         <section class="editor-panel" aria-label="Markdown editor">
           <div class="tabs" role="tablist" aria-label="Editor views">
-            <button id="markdownTab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="markdownPanel" data-tab="markdown"><i data-lucide="code-xml" aria-hidden="true"></i><span>Markdown editor</span></button>
-            <button id="visualTab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="visualPanel" data-tab="visual"><i data-lucide="square-pen" aria-hidden="true"></i><span>Visual editor</span></button>
+            <button id="markdownTab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="editorPanel" data-tab="markdown"><i data-lucide="code-xml" aria-hidden="true"></i><span>Markdown editor</span></button>
+            <button id="visualTab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="editorPanel" data-tab="visual"><i data-lucide="square-pen" aria-hidden="true"></i><span>Visual editor</span></button>
             <button id="previewTab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="previewPanel" data-tab="preview"><i data-lucide="presentation" aria-hidden="true"></i><span>Presentation</span></button>
           </div>
 
@@ -44,13 +44,10 @@
             The editor library could not load. Check your connection or use a webserver that can access CDN assets.
           </div>
 
-          <div id="visualPanel" class="tab-panel" role="tabpanel" aria-labelledby="visualTab" hidden>
+          <div id="editorPanel" class="tab-panel is-active" role="tabpanel" aria-labelledby="markdownTab">
             <div id="visualEditor" class="visual-editor"></div>
-          </div>
-
-          <div id="markdownPanel" class="tab-panel is-active" role="tabpanel" aria-labelledby="markdownTab">
             <label class="visually-hidden" for="markdownSource">Markdown source</label>
-            <textarea id="markdownSource" spellcheck="false" placeholder="Write Markdown here..."></textarea>
+            <textarea id="markdownSource" spellcheck="false" placeholder="Write Markdown here..." hidden></textarea>
           </div>
 
           <div id="previewPanel" class="tab-panel preview-panel" role="tabpanel" aria-labelledby="previewTab" hidden>
