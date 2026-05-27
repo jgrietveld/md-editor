@@ -217,8 +217,13 @@ Write Markdown here, then preview or download it.
       return;
     }
 
-    if ((activeTab === "visual" || activeTab === "markdown") && editor) {
-      setMarkdown(editor.getMarkdown(), { source: activeTab, silent: true });
+    if (activeTab === "markdown") {
+      setMarkdown(elements.markdownSource.value, { source: "markdown", silent: true });
+      return;
+    }
+
+    if (activeTab === "visual" && editor) {
+      setMarkdown(mergeFrontmatterWithBody(markdown, editor.getMarkdown()), { source: "visual", silent: true });
     }
   }
 
@@ -231,17 +236,23 @@ Write Markdown here, then preview or download it.
 
   function syncView(viewName) {
     const displayMarkdown = getDisplayMarkdown();
+    const isMarkdownView = viewName === "markdown";
+    const isVisualView = viewName === "visual";
 
     if (elements.markdownSource.value !== displayMarkdown) {
       elements.markdownSource.value = displayMarkdown;
     }
 
-    if ((viewName === "markdown" || viewName === "visual") && editor) {
+    elements.markdownSource.hidden = !isMarkdownView;
+    elements.visualEditor.hidden = !isVisualView;
+
+    if (isVisualView && editor) {
       isSyncingEditor = true;
-      if (editor.getMarkdown() !== displayMarkdown) {
-        editor.setMarkdown(displayMarkdown, false);
+      const editorMarkdown = getEditorMarkdown(displayMarkdown);
+      if (editor.getMarkdown() !== editorMarkdown) {
+        editor.setMarkdown(editorMarkdown, false);
       }
-      editor.changeMode(viewName === "visual" ? "wysiwyg" : "markdown", true);
+      editor.changeMode("wysiwyg", true);
       normalizeEditorMarkdown();
       isSyncingEditor = false;
     }
@@ -267,9 +278,9 @@ Write Markdown here, then preview or download it.
       elements.markdownSource.value = markdown;
     }
 
-    if ((needsEditorNormalization || !["visual", "markdown"].includes(options.source)) && editor) {
+    if ((needsEditorNormalization || options.source !== "visual") && editor) {
       isSyncingEditor = true;
-      editor.setMarkdown(markdown, false);
+      editor.setMarkdown(getEditorMarkdown(markdown), false);
       isSyncingEditor = false;
     }
 
@@ -366,19 +377,58 @@ Write Markdown here, then preview or download it.
       return;
     }
 
-    markdown = normalizedMarkdown;
-    elements.markdownSource.value = normalizedMarkdown;
+    markdown = mergeFrontmatterWithBody(markdown, normalizedMarkdown);
+    elements.markdownSource.value = markdown;
     editor.setMarkdown(normalizedMarkdown, false);
   }
 
+  function getEditorMarkdown(value) {
+    return splitYamlFrontmatter(value).body;
+  }
+
+  function mergeFrontmatterWithBody(sourceMarkdown, bodyMarkdown) {
+    const { frontmatter, bodyPrefix } = splitYamlFrontmatter(sourceMarkdown);
+
+    if (!frontmatter) {
+      return bodyMarkdown;
+    }
+
+    const separator = bodyPrefix || (bodyMarkdown ? "\n" : "");
+    return `${frontmatter}${separator}${bodyMarkdown}`;
+  }
+
+  function splitYamlFrontmatter(value) {
+    const match = /^(---[ \t]*(?:\r\n|\n|\r)[\s\S]*?(?:\r\n|\n|\r)---[ \t]*)(?=\r\n|\n|\r|$)/.exec(value);
+
+    if (!match) {
+      return {
+        frontmatter: "",
+        bodyPrefix: "",
+        body: value
+      };
+    }
+
+    const frontmatter = match[0];
+    const bodyWithPrefix = value.slice(frontmatter.length);
+    const bodyPrefix = (/^(?:(?:\r\n|\n|\r)+)/.exec(bodyWithPrefix) || [""])[0];
+
+    return {
+      frontmatter,
+      bodyPrefix,
+      body: bodyWithPrefix.slice(bodyPrefix.length)
+    };
+  }
+
   function renderPreview() {
+    const previewMarkdown = getEditorMarkdown(getDisplayMarkdown());
+
     if (viewer && typeof viewer.setMarkdown === "function") {
-      viewer.setMarkdown(getDisplayMarkdown());
+      viewer.setMarkdown(previewMarkdown);
       window.requestAnimationFrame(decoratePreviewCodeBlocks);
       return;
     }
 
-    elements.preview.textContent = getDisplayMarkdown() || "Nothing to preview yet.";
+    elements.preview.textContent = previewMarkdown || "Nothing to preview yet.";
   }
 
   function decoratePreviewCodeBlocks() {
