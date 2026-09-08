@@ -4,8 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Visual Markdown Editor</title>
-    <link rel="preconnect" href="https://uicdn.toast.com">
-    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+    <link rel="stylesheet" href="vendor/toastui-editor.min.css">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -41,7 +40,7 @@
           </div>
 
           <div id="libraryError" class="library-error" role="alert" hidden>
-            The editor library could not load. Check your connection or use a webserver that can access CDN assets.
+            The editor library could not load. Check that the files in the vendor/ folder are present and served correctly.
           </div>
 
           <div id="editorPanel" class="tab-panel is-active" role="tabpanel" aria-labelledby="markdownTab">
@@ -74,8 +73,8 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="vendor/toastui-editor-all.min.js"></script>
+    <script src="vendor/lucide.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
